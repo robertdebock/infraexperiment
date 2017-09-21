@@ -1,0 +1,39 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: create infrastructure
+      command: terraform apply
+      args:
+        chdir: ./terraform/
+      register:
+        terraformapply
+      changed_when: "'0 changed' not in terraformapply.stdout"
+
+- hosts: all
+  remote_user: root
+
+  tasks:
+    - name: wait for port 22 to become available.
+      local_action: "wait_for port=22 host={{ inventory_hostname }}"
+
+    - name: install webserver
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - httpd
+        - mod_ssl
+
+    - name: enable webserver
+      systemd:
+        name: httpd
+        state: started
+
+    - name: place content
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+

@@ -1,0 +1,44 @@
+resource "digitalocean_droplet" "{{ item }}-web" {
+  image    = "centos-7-0-x64"
+  name     = "{{ item }}-web-${count.index}"
+  region   = "{{ item }}"
+  size     = "512mb"
+  ssh_keys = [914738]
+  count    = 2
+}
+
+resource "digitalocean_loadbalancer" "{{ item }}-lb" {
+  name                   = "{{ item }}-lb"
+  region                 = "{{ item }}"
+  redirect_http_to_https = true
+
+  forwarding_rule {
+    entry_port      = 80
+    entry_protocol  = "http"
+    target_port     = 80
+    target_protocol = "http"
+  }
+
+  forwarding_rule {
+    entry_port      = 443
+    entry_protocol  = "https"
+    target_port     = 443
+    target_protocol = "https"
+    tls_passthrough = true
+  }
+
+  healthcheck {
+    port     = 80
+    protocol = "http"
+    path     = "/"
+  }
+
+  droplet_ids = ["${digitalocean_droplet.{{ item }}-web.*.id}"]
+}
+
+resource "cloudflare_record" "{{ item }}" {
+  domain = "meinit.nl"
+  name   = "{{ item }}"
+  value  = "${digitalocean_loadbalancer.{{ item }}-lb.ip}"
+  type   = "A"
+}

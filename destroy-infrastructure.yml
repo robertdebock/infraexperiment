@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: destroy droplet
+      command: terraform destroy --force
+      args:
+        chdir: ./terraform/
+      register:
+        terraformdestroy
+      changed_when: "'0 destroyed' not in terraformdestroy.stdout"
+

@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: create terraform file per location
+      template:
+        src: templates/location.tf.j2
+        dest: terraform/{{ item }}.tf
+      with_items:
+        - ams3
+#        - blr1
+#        - fra1
+#        - lon1
+#        - nyc3
+#        - sfo1
+        - sgp1
+#        - tor1
